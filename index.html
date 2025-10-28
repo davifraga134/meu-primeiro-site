@@ -3,136 +3,668 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Meu Site de Jogo Profissional</title>
-
+    <title>Puzzle de Luz Minimalista</title>
+    
     <style>
-        /* Define a fonte e a cor de fundo */
+        :root {
+            --grid-size: 10;
+            --cell-size: 45px;
+            --bg-color: #1a1a1a;
+            --grid-bg: #2b2b2b;
+            --border-color: #333;
+            --text-color: #f0f0f0;
+            
+            /* Cores do Feixe */
+            --color-white: #ffffff;
+            --color-red: #ff4141;
+            --color-blue: #419fff;
+            --color-green: #41ff7b;
+        }
+
         body {
-            font-family: Arial, sans-serif; /* Fonte fácil de ler */
-            background-color: #2c2f33; /* Fundo escuro, tipo Discord */
-            color: #ffffff; /* Texto branco */
-            margin: 0;
-            padding: 20px;
-            line-height: 1.6; /* Espaço entre as linhas */
-        }
-
-        /* O "container" é uma caixa que segura tudo no meio */
-        .container {
-            max-width: 800px; /* Largura máxima do conteúdo */
-            margin: 0 auto; /* Centraliza a caixa */
-            background-color: #23272a; /* Cor de fundo da caixa */
-            padding: 20px;
-            border-radius: 8px; /* Cantos arredondados */
-        }
-
-        /* Estilo para os Títulos */
-        h1, h2 {
-            color: #7289da; /* Um azul legal, tipo Discord */
-            border-bottom: 2px solid #7289da; /* Linha embaixo do título */
-            padding-bottom: 5px;
-        }
-
-        /* Estilo para o lugar do Anúncio */
-        .anuncio-placeholder {
-            width: 100%;
-            height: 100px;
-            background-color: #40444b; /* Cinza escuro */
-            border: 2px dashed #ffffff; /* Borda tracejada */
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
             display: flex;
-            align-items: center;
             justify-content: center;
-            margin: 20px 0;
-            text-align: center;
-            font-size: 18px;
-            font-weight: bold;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            -webkit-font-smoothing: antialiased;
         }
 
-        /* Estilo para a caixa VIP */
-        .vip-box {
-            background-color: #2c2f33; /* Fundo um pouco diferente */
-            border: 1px solid #7289da; /* Borda azul */
+        #game-container {
+            display: grid;
+            grid-template-areas:
+                "header header"
+                "toolbar grid"
+                "toolbar controls";
+            grid-template-columns: auto 1fr;
+            gap: 20px;
             padding: 20px;
-            border-radius: 8px;
-            margin-top: 20px;
         }
 
-        /* Estilo para o Botão de Comprar */
-        .botao-comprar {
-            background-color: #4caf50; /* Verde (sucesso, comprar) */
-            color: white;
-            padding: 15px 30px;
-            text-decoration: none; /* Tira o sublinhado de link */
-            font-size: 20px;
-            font-weight: bold;
-            border-radius: 5px;
-            display: inline-block; /* Faz ele se comportar como um botão */
-            margin-top: 20px;
-            cursor: pointer; /* Muda o mouse para uma "mãozinha" */
-            border: none;
-        }
-
-        /* Efeito ao passar o mouse */
-        .botao-comprar:hover {
-            background-color: #45a049; /* Verde um pouco mais escuro */
-        }
-        
-        /* Rodapé */
-        .footer {
-            margin-top: 30px;
+        h1 {
+            grid-area: header;
             text-align: center;
-            font-size: 14px;
-            color: #99aab5; /* Cinza claro */
+            color: var(--color-white);
+            font-weight: 300;
+            letter-spacing: 2px;
         }
 
-    </style>
-</head>
+        /* --- Barra de Ferramentas --- */
+        #toolbar {
+            grid-area: toolbar;
+            background-color: var(--grid-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 20px;
+            width: 150px;
+        }
 
+        #toolbar h3 {
+            margin-top: 0;
+            text-align: center;
+            font-weight: 400;
+        }
+
+        .tool-inventory {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .tool {
+            width: var(--cell-size);
+            height: var(--cell-size);
+            border: 2px dashed var(--border-color);
+            border-radius: 5px;
+            cursor: pointer;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 24px;
+            transition: all 0.2s ease;
+            user-select: none;
+            position: relative;
+        }
+
+        .tool[data-tool="mirror-f"]::before { content: "/"; }
+        .tool[data-tool="mirror-b"]::before { content: "\\"; } /* A barra \ é escapada */
+        .tool[data-tool="filter-red"] { background-color: rgba(255, 65, 65, 0.3); }
+        .tool[data-tool="filter-blue"] { background-color: rgba(65, 159, 255, 0.3); }
+
+        .tool:hover {
+            border-color: var(--color-white);
+            transform: scale(1.1);
+        }
+
+        .tool.selected {
+            border-style: solid;
+            border-color: var(--color-white);
+            box-shadow: 0 0 10px var(--color-white);
+        }
+
+        .tool-count {
+            position: absolute;
+            bottom: -5px;
+            right: -5px;
+            background: var(--bg-color);
+            border: 1px solid var(--border-color);
+            border-radius: 50%;
+            width: 20px;
+            height: 20px;
+            font-size: 12px;
+            font-weight: bold;
+            line-height: 20px;
+            text-align: center;
+        }
+
+        /* --- Grade do Jogo --- */
+        #grid-container {
+            grid-area: grid;
+        }
+
+        #grid {
+            display: grid;
+            grid-template-columns: repeat(var(--grid-size), var(--cell-size));
+            grid-template-rows: repeat(var(--grid-size), var(--cell-size));
+            border: 2px solid var(--border-color);
+            background-color: var(--grid-bg);
+        }
+
+        .cell {
+            width: var(--cell-size);
+            height: var(--cell-size);
+            box-sizing: border-box; /* Importante para o border não somar */
+            border: 1px solid var(--border-color);
+            position: relative;
+        }
+
+        .cell.placeable:hover {
+            background-color: #444;
+            cursor: copy;
+        }
+
+        /* --- Peças do Jogo --- */
+        .piece {
+            width: 100%;
+            height: 100%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 24px;
+            user-select: none;
+        }
+
+        /* Fonte de Luz */
+        .source {
+            background-color: #f0f0f0;
+            border-radius: 50%;
+            box-shadow: 0 0 10px #fff, 0 0 20px #fff;
+        }
+        /* Alvo */
+        .target {
+            border-radius: 5px;
+            box-sizing: border-box;
+            border: 4px dashed;
+        }
+        .target.red { border-color: var(--color-red); }
+        .target.blue { border-color: var(--color-blue); }
+        .target.white { border-color: var(--color-white); }
+
+        /* Ferramentas Colocadas */
+        .mirror-f { content: "/"; }
+        .mirror-b { content: "\\"; }
+        .filter-red { background-color: rgba(255, 65, 65, 0.5); }
+        .filter-blue { background-color: rgba(65, 159, 255, 0.5); }
+
+
+        /* --- Feixe de Luz (A Mágica) --- */
+        .beam {
+            position: absolute;
+            background-color: #fff;
+            /* A posição e rotação serão setadas pelo JS */
+            transition: all 0.05s linear;
+            transform-origin: left center;
+            z-index: 10;
+        }
+
+        .beam.white { box-shadow: 0 0 8px #fff; background-color: var(--color-white); }
+        .beam.red { box-shadow: 0 0 8px var(--color-red); background-color: var(--color-red); }
+        .beam.blue { box-shadow: 0 0 8px var(--color-blue); background-color: var(--color-blue); }
+        .beam.green { box-shadow: 0 0 8px var(--color-green); background-color: var(--color-green); }
+
+
+        /* --- Controles --- */
+        #controls {
+            grid-area: controls;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            align-items: stretch;
+        }
+
+        button {
+            padding: 12px 20px;
+            font-size: 16px;
+            background-color: var(--grid-bg);
+            color: var(--text-color);
+            border: 2px solid var(--border-color);
+            border-radius: 5px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        button:hover {
+            border-color: var(--color-white);
+            color: var(--color-white);
+        }
+
+        #run-button:hover {
+            border-color: var(--color-green);
+            color: var(--color-green);
+            box-shadow: 0 0 10px var(--color-green);
+        }
+
+        #reset-button:hover {
+            border-color: var(--color-red);
+            color: var(--color-red);
+        }
+
+        #message-area {
+            text-align: center;
+            min-height: 1.2em;
+        }
+    </style>
+    
+</head>
 <body>
 
-    <div class="container">
-
-        <h1>Meu Site de Jogo Profissional</h1>
-        <p>Bem-vindo ao nosso site! O melhor lugar para jogar e fazer amigos.</p>
-
-        <h2>Sobre Nosso Jogo</h2>
-        <p>Aqui você escreve sobre o seu jogo. O que ele é? Por que é legal? Coloque vídeos ou imagens aqui (quando aprender a fazer isso).</p>
-
-        <h2>Anúncios (Como você ganha dinheiro)</h2>
-        <p>Este espaço abaixo é onde os anúncios vão aparecer. Para isso funcionar de verdade, você precisa se cadastrar em um serviço como o <strong>Google AdSense</strong>. Eles te dão um código para colar aqui.</p>
-        
-        <div class="anuncio-placeholder">
-            (Espaço reservado para seu anúncio)<br>
-            Visitantes VIP não veem isso!
+    <div id="game-container">
+        <h1>Reflexo</h1>
+        <div id="toolbar">
+            <h3>Ferramentas</h3>
+            <div class="tool-inventory">
+                </div>
         </div>
 
-        <h2>Seja VIP (e verificado no Discord!)</h2>
-        <p>Ao se tornar VIP, você ajuda a manter o servidor online e ganha benefícios incríveis!</p>
-
-        <div class="vip-box">
-            <h3>Benefícios do VIP:</h3>
-            <ul>
-                <li><strong>Site sem Anúncios:</strong> Navegue sem nenhuma propaganda.</li>
-                <li><strong>Verificado no Discord:</strong> Ganhe um cargo especial (Ex: @VIP Verificado) no nosso servidor do Discord.</li>
-                <li><strong>Itens Exclusivos:</strong> (Coloque outros benefícios aqui)</li>
-            </ul>
-
-            <p><strong>Preço:</strong> R$ 10,00 por mês</p>
-
-            <button class="botao-comprar" onclick="alert('Isso é só um teste! Aqui você iria para a página de pagamento de verdade. Depois do pagamento, nós te daríamos o cargo no Discord!')">
-                Quero ser VIP Agora!
-            </button>
-        </div> <button class="botao-comprar" onclick="alert('Isso é só um teste!')">
-    Quero ser VIP Agora!
-</button>
-
-        <h2>Nossos Links</h2>
-        <p>Entre na nossa comunidade!</p>
-        <a href="#" class="botao-comprar" style="background-color: #7289da;">Entre no nosso Discord</a>
-
-        <div class="footer">
-            <p>© 2025 Meu Site de Jogo. Todos os direitos reservados.</p>
+        <div id="grid-container">
+            <div id="grid">
+                </div>
         </div>
-<div class="anuncio-placeholder">
-    (Espaço reservado para seu anúncio)
-</div>    </div> </body>
+
+        <div id="controls">
+            <button id="run-button">Disparar Luz</button>
+            <button id="reset-button">Reiniciar</button>
+            <p id="message-area">Coloque as ferramentas e dispare a luz!</p>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+
+            // --- Configuração Inicial ---
+            const GRID_SIZE = 10;
+            const CELL_SIZE = 45; // Deve ser o mesmo do CSS
+            const BEAM_STEP_DELAY = 50; // Velocidade da animação em ms
+
+            const grid = document.getElementById('grid');
+            const toolbar = document.querySelector('.tool-inventory');
+            const runButton = document.getElementById('run-button');
+            const resetButton = document.getElementById('reset-button');
+            const messageArea = document.getElementById('message-area');
+
+            let gridState = []; // Array 2D para o estado lógico
+            let domCells = []; // Array 2D para os elementos DOM
+            let currentTool = null; // Ferramenta selecionada
+            let simulationInterval = null; // Para controlar a animação
+            let isSimulating = false;
+
+            // --- Definição do Nível ---
+            // Você pode criar vários níveis e uma função para carregá-los
+            const level_1 = {
+                pieces: [
+                    { x: 0, y: 4, type: 'source', direction: 'right', color: 'white' },
+                    { x: 9, y: 6, type: 'target', color: 'blue' },
+                    { x: 3, y: 4, type: 'wall' }, // Exemplo de parede, descomente para ver
+                    { x: 3, y: 5, type: 'wall' },
+                ],
+                tools: {
+                    'mirror-f': 2,
+                    'mirror-b': 2,
+                    'filter-blue': 1,
+                }
+            };
+
+            let availableTools = {};
+
+            // --- Funções de Inicialização ---
+
+            function initGame() {
+                grid.innerHTML = '';
+                toolbar.innerHTML = '';
+                gridState = [];
+                domCells = [];
+                availableTools = JSON.parse(JSON.stringify(level_1.tools)); // Cópia profunda
+                
+                // 1. Criar Grade Lógica e DOM
+                for (let y = 0; y < GRID_SIZE; y++) {
+                    const rowState = [];
+                    const rowDom = [];
+                    for (let x = 0; x < GRID_SIZE; x++) {
+                        const cell = document.createElement('div');
+                        cell.classList.add('cell');
+                        cell.dataset.x = x;
+                        cell.dataset.y = y;
+
+                        // Estado inicial: 'empty' e 'placeable'
+                        const cellState = { type: 'empty', placeable: true, tool: null };
+
+                        grid.appendChild(cell);
+                        rowState.push(cellState);
+                        rowDom.push(cell);
+                    }
+                    gridState.push(rowState);
+                    domCells.push(rowDom);
+                }
+
+                // 2. Colocar Peças do Nível
+                level_1.pieces.forEach(piece => {
+                    const { x, y, type } = piece;
+                    const cellState = gridState[y][x];
+                    const cellDom = domCells[y][x];
+
+                    cellState.type = type;
+                    cellState.placeable = false; // Não pode colocar ferramentas sobre peças
+                    cellState.data = piece; // Armazena dados (direção, cor)
+
+                    const pieceDom = document.createElement('div');
+                    pieceDom.classList.add('piece', type);
+                    if (piece.color) {
+                        pieceDom.classList.add(piece.color);
+                    }
+                    cellDom.appendChild(pieceDom);
+                    cellDom.classList.remove('placeable');
+                });
+                
+                // 3. Adicionar Listeners de Célula (após peças serem colocadas)
+                for (let y = 0; y < GRID_SIZE; y++) {
+                    for (let x = 0; x < GRID_SIZE; x++) {
+                        if (gridState[y][x].placeable) {
+                            domCells[y][x].classList.add('placeable');
+                            domCells[y][x].addEventListener('click', () => onCellClick(x, y));
+                        }
+                    }
+                }
+
+
+                // 4. Criar Barra de Ferramentas
+                updateToolbar();
+            }
+
+            function updateToolbar() {
+                toolbar.innerHTML = '';
+                for (const [toolType, count] of Object.entries(availableTools)) {
+                    const toolDom = document.createElement('div');
+                    toolDom.classList.add('tool');
+                    toolDom.dataset.tool = toolType;
+                    toolDom.addEventListener('click', () => selectTool(toolType, toolDom));
+                    
+                    const countDom = document.createElement('div');
+                    countDom.classList.add('tool-count');
+                    countDom.textContent = count;
+                    toolDom.appendChild(countDom);
+
+                    toolbar.appendChild(toolDom);
+                }
+                
+                // Adicionar ferramenta "Remover"
+                const removerDom = document.createElement('div');
+                removerDom.classList.add('tool');
+                removerDom.dataset.tool = 'remover';
+                removerDom.innerHTML = '&#x274C;'; // Emoji X
+                removerDom.addEventListener('click', () => selectTool('remover', removerDom));
+                toolbar.appendChild(removerDom);
+
+                // Desselecionar ferramenta atual
+                currentTool = null;
+            }
+
+            // --- Funções de Interação ---
+
+            function selectTool(toolType, toolDom) {
+                if (isSimulating) return;
+
+                // Desmarcar ferramenta anterior
+                document.querySelectorAll('.tool.selected').forEach(el => el.classList.remove('selected'));
+
+                if (currentTool === toolType) {
+                    currentTool = null; // Clicar de novo deseleciona
+                } else {
+                    currentTool = toolType;
+                    toolDom.classList.add('selected');
+                }
+            }
+
+            function onCellClick(x, y) {
+                if (isSimulating || !currentTool) return;
+                
+                const cellState = gridState[y][x];
+                const cellDom = domCells[y][x];
+
+                // Se for a ferramenta "Remover"
+                if (currentTool === 'remover') {
+                    if (cellState.tool) {
+                        availableTools[cellState.tool]++; // Devolve ao inventário
+                        cellState.tool = null;
+                        cellDom.innerHTML = ''; // Limpa o DOM
+                        updateToolbar();
+                    }
+                    return;
+                }
+
+                // Se for para colocar uma ferramenta
+                const toolCount = availableTools[currentTool];
+                if (toolCount > 0) {
+                    // Se já houver uma ferramenta, devolve ela primeiro
+                    if (cellState.tool) {
+                        availableTools[cellState.tool]++;
+                    }
+
+                    // Coloca a nova ferramenta
+                    cellState.tool = currentTool;
+                    availableTools[currentTool]--;
+                    
+                    // Atualiza o DOM
+                    cellDom.innerHTML = ''; // Limpa qualquer coisa (como o feixe)
+                    const toolPieceDom = document.createElement('div');
+                    toolPieceDom.classList.add('piece', currentTool);
+                    cellDom.appendChild(toolPieceDom);
+
+                    updateToolbar();
+                    
+                    // Desseleciona a ferramenta após o uso para evitar cliques múltiplos
+                    document.querySelectorAll('.tool.selected').forEach(el => el.classList.remove('selected'));
+                    currentTool = null;
+                } else {
+                    showMessage("Sem mais ferramentas desse tipo!");
+                }
+            }
+
+            // --- Lógica da Simulação ---
+
+            function runSimulation() {
+                if (isSimulating) return;
+
+                clearBeams();
+                isSimulating = true;
+                runButton.disabled = true;
+                resetButton.disabled = true;
+                showMessage("Disparando...");
+
+                // Encontrar a fonte de luz
+                const source = level_1.pieces.find(p => p.type === 'source');
+                if (!source) {
+                    console.error("Nenhuma fonte de luz encontrada!");
+                    return;
+                }
+
+                let beam = {
+                    x: source.x,
+                    y: source.y,
+                    dir: source.direction,
+                    color: source.color,
+                    isAlive: true,
+                    lastCell: null // Para desenhar o feixe
+                };
+
+                let stepCount = 0;
+                const maxSteps = 100; // Proteção contra loop infinito
+
+                simulationInterval = setInterval(() => {
+                    if (!beam.isAlive || stepCount++ > maxSteps) {
+                        stopSimulation(false, "O feixe se perdeu...");
+                        return;
+                    }
+
+                    // 1. Desenhar feixe da CÉLULA ANTERIOR para a ATUAL
+                    drawBeamSegment(beam);
+
+                    // 2. Mover o feixe para a próxima célula
+                    beam.lastCell = { x: beam.x, y: beam.y }; // Armazena célula atual
+                    
+                    switch (beam.dir) {
+                        case 'right': beam.x++; break;
+                        case 'left':  beam.x--; break;
+                        case 'up':    beam.y--; break;
+                        case 'down':  beam.y++; break;
+                    }
+
+                    // 3. Verificar Colisão (Paredes e Limites)
+                    if (beam.x < 0 || beam.x >= GRID_SIZE || beam.y < 0 || beam.y >= GRID_SIZE) {
+                        beam.isAlive = false;
+                        stopSimulation(false, "O feixe atingiu a borda.");
+                        return;
+                    }
+
+                    // 4. Verificar Interação (Peças e Ferramentas)
+                    const cellState = gridState[beam.y][beam.x];
+                    const activeType = cellState.tool || cellState.type;
+
+                    switch (activeType) {
+                        case 'target':
+                            if (cellState.data.color === beam.color) {
+                                drawBeamSegment(beam); // Desenha o último segmento até o alvo
+                                beam.isAlive = false;
+                                stopSimulation(true, "Nível Completo!");
+                            } else {
+                                beam.isAlive = false;
+                                stopSimulation(false, `O alvo esperava ${cellState.data.color}, mas recebeu ${beam.color}.`);
+                            }
+                            break;
+                        
+                        case 'wall':
+                            beam.isAlive = false;
+                            stopSimulation(false, "O feixe atingiu uma parede.");
+                            break;
+                        
+                        // --- Interação com Ferramentas ---
+                        case 'mirror-f': // Espelho "/"
+                            if (beam.dir === 'right') beam.dir = 'up';
+                            else if (beam.dir === 'left') beam.dir = 'down';
+                            else if (beam.dir === 'up') beam.dir = 'right';
+                            else if (beam.dir === 'down') beam.dir = 'left';
+                            break;
+
+                        case 'mirror-b': // Espelho "\"
+                            if (beam.dir === 'right') beam.dir = 'down';
+                            else if (beam.dir === 'left') beam.dir = 'up';
+                            else if (beam.dir === 'up') beam.dir = 'left';
+                            else if (beam.dir === 'down') beam.dir = 'right';
+                            break;
+
+                        case 'filter-red':
+                            beam.color = 'red';
+                            break;
+                        case 'filter-blue':
+                            beam.color = 'blue';
+                            break;
+                        // Adicione mais filtros (ex: green) aqui
+                        
+                        case 'empty':
+                        default:
+                            // Feixe continua
+                            break;
+                    }
+
+                }, BEAM_STEP_DELAY);
+            }
+
+            function stopSimulation(isWin, message) {
+                clearInterval(simulationInterval);
+                isSimulating = false;
+                runButton.disabled = false;
+                resetButton.disabled = false;
+                
+                if (isWin) {
+                    showMessage(message, 'green');
+                } else {
+                    showMessage(message, 'red');
+                }
+            }
+
+            function drawBeamSegment(beam) {
+                if (!beam.lastCell) return; // Não desenha no primeiro passo (na fonte)
+
+                const beamDom = document.createElement('div');
+                beamDom.classList.add('beam', beam.color);
+
+                const halfCell = CELL_SIZE / 2;
+                let x = (beam.lastCell.x * CELL_SIZE) + halfCell;
+                let y = (beam.lastCell.y * CELL_SIZE) + halfCell;
+                let angle = 0;
+                let length = CELL_SIZE;
+                
+                // Ajusta o ponto de origem, comprimento e ângulo do feixe
+                // Isso é complexo, mas faz o feixe parecer contínuo
+                if (beam.x > beam.lastCell.x) { // -> Direita
+                    angle = 0;
+                } else if (beam.x < beam.lastCell.x) { // <- Esquerda
+                    angle = 180;
+                } else if (beam.y > beam.lastCell.y) { // v Baixo
+                    angle = 90;
+                } else if (beam.y < beam.lastCell.y) { // ^ Cima
+                    angle = -90;
+                }
+
+                // Posiciona o feixe no centro da célula *anterior*
+                beamDom.style.left = `${x}px`;
+                beamDom.style.top = `${y}px`;
+                beamDom.style.height = `4px`; // Largura do feixe
+                beamDom.style.width = `${length}px`;
+                beamDom.style.transform = `rotate(${angle}deg) translate(-${length / 2}px, -2px)`;
+                beamDom.style.transformOrigin = `center center`;
+                
+                // Ajuste fino para feixes de canto (espelhos)
+                // Esta lógica desenha o feixe da borda da célula anterior para o centro da nova
+                const dx = beam.x - beam.lastCell.x;
+                const dy = beam.y - beam.lastCell.y;
+                
+                // Ponto de entrada na célula *anterior*
+                let entryX = x - dx * halfCell;
+                let entryY = y - dy * halfCell;
+                
+                beamDom.style.left = `${entryX}px`;
+                beamDom.style.top = `${entryY}px`;
+                beamDom.style.width = `${CELL_SIZE}px`;
+                beamDom.style.transform = `rotate(${angle}deg) translate(0, -2px)`;
+                beamDom.style.transformOrigin = `left center`;
+
+                grid.appendChild(beamDom);
+            }
+
+
+            function clearBeams() {
+                document.querySelectorAll('.beam').forEach(el => el.remove());
+                showMessage("Coloque as ferramentas e dispare a luz!");
+            }
+
+            function resetGame() {
+                if (isSimulating) return;
+                stopSimulation(false, "");
+                clearBeams();
+                
+                // Limpar apenas as ferramentas colocadas, não o nível
+                for (let y = 0; y < GRID_SIZE; y++) {
+                    for (let x = 0; x < GRID_SIZE; x++) {
+                        if (gridState[y][x].placeable && gridState[y][x].tool) {
+                            gridState[y][x].tool = null;
+                            domCells[y][x].innerHTML = '';
+                        }
+                    }
+                }
+                
+                // Resetar inventário de ferramentas
+                availableTools = JSON.parse(JSON.stringify(level_1.tools));
+                updateToolbar();
+                currentTool = null;
+                showMessage("Nível reiniciado. Coloque as ferramentas.");
+            }
+            
+            function showMessage(msg, color = 'white') {
+                messageArea.textContent = msg;
+                messageArea.style.color = `var(--color-${color}, var(--text-color))`;
+            }
+
+            // --- Listeners Globais ---
+            runButton.addEventListener('click', runSimulation);
+            resetButton.addEventListener('click', resetGame);
+
+            // --- Iniciar o Jogo ---
+            initGame();
+        });
+    </script>
+    
+</body>
 </html>
